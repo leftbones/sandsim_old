@@ -1,3 +1,9 @@
-main.dSYM
 .vscode
 .DS_Store
+*.dSYM/
+*.exe
+*.app
+*.out
+*.i*86
+*.x86_64
+*.hex
