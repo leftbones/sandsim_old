@@ -37,7 +37,6 @@ int FlowParticle(Particle grid[SCREEN_W][SCREEN_H], int dir, int x, int y) {
 
 // Material-specific Update Functions
 // ------------------------------
-
 // Sand
 void UpdateSand(Particle grid[SCREEN_W][SCREEN_H], int x, int y) {
 	if (InBounds(grid, x, y+1) && (IsEmpty(grid, x, y+1))) // Move down

@@ -16,15 +16,14 @@ int main(void) {
 	SetTargetFPS(600);
 	srand(time(NULL));
 
-	//Font FONT_UI = LoadFontEx("RandomEncounter.ttf", 32, 0, NULL);
 	Font FONT_UI = LoadFont("RandomEncounter.ttf");
-	//SetTextureFilter(FONT_UI.texture, TEXTURE_FILTER_BILINEAR);
 	
 	Vector2 mouse_pos;
 	HideCursor();
 
 	//Particle grid[SCREEN_W][SCREEN_H];
-	Particle* grid = malloc((SCREEN_W * SCREEN_H) * sizeof(Particle));
+	//Particle* grid = malloc((SCREEN_W * SCREEN_H) * sizeof(Particle));
+	Particle(*grid)[] = malloc((SCREEN_W * SCREEN_H) * sizeof(Particle));
 
 	for (int y = 0; y < SCREEN_H; y++) {
 		for (int x = 0; x < SCREEN_W; x++) {
@@ -55,6 +54,7 @@ int main(void) {
 		if (IsKeyPressed(KEY_ZERO)) 	{ brush_material = 0; } // Empty
 		if (IsKeyPressed(KEY_ONE)) 		{ brush_material = 1; } // Sand
 		if (IsKeyPressed(KEY_TWO)) 		{ brush_material = 2; } // Water
+		if (IsKeyPressed(KEY_THREE))	{ brush_material = 3; } // Stone
 
 		// Spouts
 		// PaintParticles(grid, 5, 4, 1, 200, 0);

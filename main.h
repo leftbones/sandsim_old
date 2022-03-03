@@ -21,8 +21,8 @@
 // ------------------------------
 #define G_BLACK			(Color) { 25, 25, 34, 255 }			// BlueBlack
 #define G_WHITE			(Color) { 241, 241, 241, 255 }	// Dark White
-#define G_GRAY			(Color) { 138, 152, 162 } 			// Unofficial Gray
-#define G_DARKGRAY 	(Color) { 69, 77, 82 }					// Unofficial Gray But 50% Darker
+#define G_GRAY			(Color) { 138, 152, 162, 255 } 			// Unofficial Gray
+#define G_DARKGRAY 	(Color) { 69, 77, 82, 255 }					// Unofficial Gray But 50% Darker
 #define G_RED 			(Color) { 239, 71, 111, 255 }		// Technically Pink
 #define G_ORANGE 		(Color) { 255, 117, 56, 255 }		// Just Orange
 #define G_YELLOW 		(Color) { 255, 206, 92, 255 }  	// Off-Yellow
@@ -220,13 +220,12 @@ void SetParticle(Particle grid[SCREEN_W][SCREEN_H], int id, int x, int y) {
 	grid[x][y] = new_particle;
 }
 
-
 // Paint particles to the grid with a specified brush size
 void PaintParticles(Particle grid[SCREEN_W][SCREEN_H], int brushSize, int brushDensity, int id, int x, int y) {
 	int n = 0; // Number of particles painted
 	int tries = 0; // Number of attempts to paint a particle
-	int max_tries = 5; // Number of attempts before moving on
-	int goal = brushSize / brushDensity; // Goal amount of particles
+	int max_tries = 10; // Number of attempts before moving on
+	int goal = brushSize / brushDensity; // Goal amount of particles to paint
 
 	if (id > 0) { // Painting
 		while (n < goal) {
@@ -274,6 +273,12 @@ void PaintParticles(Particle grid[SCREEN_W][SCREEN_H], int brushSize, int brushD
 }
 
 
+// Paint solid particles (fill entire brush circle)
+void PaintSolidParticles(Particle grid[SCREEN_W][SCREEN_H], int brushSize, int id, int x, int y) {
+
+}
+
+
 // Main Update + Draw Functions
 // ------------------------------
 
@@ -295,6 +300,8 @@ void UpdateParticles(Particle grid[SCREEN_W][SCREEN_H]) {
 						break;
 					case 2: // Water
 						UpdateWater(grid, x, y);
+						break;
+					case 3: // Stone
 						break;
 				}
 			}
