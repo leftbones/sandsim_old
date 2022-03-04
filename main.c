@@ -8,7 +8,13 @@
 //
 // 2. Program occasionally hangs/crashes when painting near the edges of the window
 // 		- Possible due to bug #1, also possibly due to bad memory access
+//
+// 3. Some particles are being placed wrong during updates, causing the number of particles to go down when it shouldn't
+// 		- This has happened a few times, it's a mystery what's causing it this time
+// 		- Most noticeable with water but it happens with sand also
 
+
+// ------------------------------
 // Application
 // ------------------------------
 int main(void) {
@@ -31,17 +37,23 @@ int main(void) {
 		}
 	}
 
+	//
 	// Main Game Loop
-	// ------------------------------
+	//
 	while (!WindowShouldClose()) {
+		//
 		// Update
-		// ------------------------------	
+		//
 		
 		// Mouse input
 		mouse_pos = GetMousePosition();
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-			PaintParticles(grid, brush_size, brush_density, brush_material, mouse_pos.x, mouse_pos.y);
+			if (brush_material == 0 || brush_material == 3) {
+				PaintSolidParticles(grid, brush_size, brush_material, mouse_pos.x, mouse_pos.y);
+			} else {
+				PaintParticles(grid, brush_size, brush_density, brush_material, mouse_pos.x, mouse_pos.y);
+			}
 		}
 
 		if (GetMouseWheelMove()) {
@@ -56,6 +68,8 @@ int main(void) {
 		if (IsKeyPressed(KEY_TWO)) 		{ brush_material = 2; } // Water
 		if (IsKeyPressed(KEY_THREE))	{ brush_material = 3; } // Stone
 
+		if (IsKeyPressed(KEY_SEVEN))	{ brush_material = 7; } // Smoke
+
 		// Spouts
 		// PaintParticles(grid, 5, 4, 1, 200, 0);
 		// PaintParticles(grid, 5, 4, 2, 600, 0);
@@ -67,8 +81,9 @@ int main(void) {
 		// Other
 		tick_count += 1;
 
+		//
 		// Draw
-		// ------------------------------
+		//
 		BeginDrawing();
 			ClearBackground(G_BLACK);
 
@@ -79,7 +94,12 @@ int main(void) {
 			int mX = mouse_pos.x;
 			int mY = mouse_pos.y;
 
-			DrawCircleLines(mX, mY, brush_size, G_WHITE);
+			if (materials[brush_material].id == 0 || materials[brush_material].id == 3) {
+				DrawRectangleLines(mX-brush_size, mY-brush_size, brush_size*2, brush_size*2, G_WHITE);
+			} else {
+				DrawCircleLines(mX, mY, brush_size, G_WHITE);
+			}
+
 			DrawLine(mX-4, mY, mX+3, mY, G_WHITE);
 			DrawLine(mX, mY-4, mX, mY+3, G_WHITE);
 
@@ -91,6 +111,7 @@ int main(void) {
 		EndDrawing();
 	}
 
+	// ------------------------------
 	// De-initialize
 	// ------------------------------
 	CloseWindow();
