@@ -197,11 +197,6 @@ bool InBounds(Particle grid[SCREEN_W][SCREEN_H], int x, int y) {
 	return x > 0 && x < SCREEN_W && y > 0 && y < SCREEN_H;
 }
 
-// Return if grid position is in bounds and empty
-bool InBoundsAndEmpty(Particle grid[SCREEN_W][SCREEN_H], int x, int y) {
-	return (IsEmpty(grid, x, y) && InBounds(grid, x, y));
-}
-
 // Return if particle at position is falling
 bool IsFalling(Particle grid[SCREEN_W][SCREEN_H], int x, int y) {
 	return (grid[x][y].falling);
@@ -252,15 +247,6 @@ Particle GetParticle(Particle grid[SCREEN_W][SCREEN_H], int x, int y) {
 void SetParticle(Particle grid[SCREEN_W][SCREEN_H], int id, int x, int y) {
 	Particle new_particle = NewParticle(id);
 	grid[x][y] = new_particle;
-}
-
-// Swap particles at x1, y1 and x2, y2
-void SwapParticles(Particle grid[SCREEN_W][SCREEN_H], int x1, int y1, int x2, int y2) {
-	Particle p1 = grid[x1][y1];
-	Particle p2 = grid[x2][y2];
-
-	SetParticle(grid, p2.id, x1, y1);
-	SetParticle(grid, p1.id, x2, y2);
 }
 
 // Paint particles to the grid with a specified brush size

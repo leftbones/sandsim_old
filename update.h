@@ -36,6 +36,11 @@ int FlowParticle(Particle grid[SCREEN_W][SCREEN_H], int dir, int x, int y) {
 	return 0;
 }
 
+// Move between points on the grid, checking for an open space
+void MoveBetweenPoints(Particle grid[SCREEN_W][SCREEN_H], int x1, int y1, int x2, int y2) {
+
+}
+
 
 // ------------------------------
 // Material Update Functions
@@ -67,19 +72,11 @@ void UpdateSand(Particle grid[SCREEN_W][SCREEN_H], int x, int y) {
 	{
 		if (InBounds(grid, x-1, y+1) && IsEmpty(grid, x-1, y+1)) // Move down + left
 		{
-			int nX = FlowParticle(grid, -1, x, y);
-			int nY = FallParticle(grid, x-nX, y);
-
-			SetParticle(grid, P_SAND, x-nX, y+nY);
-			SetParticle(grid, P_EMPTY, x, y);
+			MoveBetweenPoints(grid, x, y, x-p.flow, y+p.fall);
 		}
 		else if (InBounds(grid, x+1, y+1) && IsEmpty(grid, x+1, y+1)) // Move down + right
 		{
-			int nX = FlowParticle(grid, 1, x, y);
-			int nY = FallParticle(grid, x+nX, y);
-
-			SetParticle(grid, P_SAND, x+nX, y+nY);
-			SetParticle(grid, P_EMPTY, x, y);
+			MoveBetweenPoints(grid, x, y, x+p.flow, y+p.fall);
 		}
 		else
 		{
@@ -104,23 +101,7 @@ void UpdateWater(Particle grid[SCREEN_W][SCREEN_H], int x, int y) {
 	}
 	else if (IsFalling(grid, x, y))
 	{
-		if (InBounds(grid, x-1, y+1) && IsEmpty(grid, x-1, y+1)) // Move down + left
-		{
-			int nX = FlowParticle(grid, -1, x, y);
-			int nY = FallParticle(grid, x-nX, y);
-
-			SetParticle(grid, P_WATER, x-nX, y+nY);
-			SetParticle(grid, P_EMPTY, x, y);
-		}
-		else if (InBounds(grid, x+1, y+1) && IsEmpty(grid, x+1, y+1)) // Move down + right
-		{
-			int nX = FlowParticle(grid, 1, x, y);
-			int nY = FallParticle(grid, x+nX, y);
-
-			SetParticle(grid, P_WATER, x+nX, y+nY);
-			SetParticle(grid, P_EMPTY, x, y);
-		}
-		else if (InBounds(grid, x-1, y) && IsEmpty(grid, x-1, y)) // Flow left
+		if (InBounds(grid, x-1, y) && IsEmpty(grid, x-1, y)) // Flow left
 		{
 			int nX = FlowParticle(grid, -1, x, y);
 

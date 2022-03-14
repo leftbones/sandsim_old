@@ -13,7 +13,6 @@
 // 		- This has happened a few times, it's a mystery what's causing it this time
 // 		- Most noticeable with water but it happens with sand also
 
-
 // ------------------------------
 // Application
 // ------------------------------
