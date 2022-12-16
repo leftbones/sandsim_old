@@ -8,7 +8,7 @@ using namespace std;
 //
 bool RandChance(float chance) {
     float roll = ((float)rand()) / (float)RAND_MAX;
-    return ceil(roll * 100) / 100 >= chance;
+    return ceil(roll * 100) / 100 <= chance;
 }
 
 int RandRange(int min, int max) {
@@ -30,9 +30,9 @@ int main() {
     HideCursor();
 
     int tick_count = 0;
-    int brush_size = 15;
-    int brush_density = 15;
     int brush_element = 1;
+    int brush_size = 15;
+    float brush_density = 0.75;
 
     // Elements
     RegisterElements();
@@ -62,7 +62,7 @@ int main() {
         if (RandChance(0.75)) {
             Vector2i pos { (GRID_W / 2) + RandRange(-2, 2), 0 };
             ElementData& data = grid.Get(pos);
-            GetElement(SAND)->Create(data, grid, pos);
+            GetElement(WATER)->Create(data, grid, pos);
         }
 
         // Brush Painting

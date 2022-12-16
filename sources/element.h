@@ -72,6 +72,19 @@ class Element {
         virtual Color GetColor(ElementData& data, ElementGrid& grid, Vector2i& pos) { return MAGENTA; }
 };
 
+// Element Types
+class Powder: public Element {
+    public:
+        virtual ~Powder() = default;
+        void Update(ElementData& data, ElementGrid& grid, Vector2i& pos) override;
+};
+
+class Liquid: public Element {
+    public:
+        virtual ~Liquid() = default;
+        void Update(ElementData& data, ElementGrid& grid, Vector2i& pos) override;
+};
+
 // Element Registry
 static map<unsigned int, Element*> Elements;
 void RegisterElements();

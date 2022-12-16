@@ -75,8 +75,11 @@ void ElementGrid::DoForEach(ElementGridCallback callback, bool valid_only) {
 
     static Vector2i pos;
 
-    for (pos.x = 0; pos.x < GRID_W; pos.x++) {
-        for (pos.y = GRID_H - 1; pos.y >= 0; pos.y--) {
+    bool is_even_tick = ((tick_count % 2) == 0);
+    int dir = is_even_tick ? 0 : 1;
+
+    for (pos.y = GRID_H - 1; pos.y >= 0; pos.y--) {
+        for (pos.x = dir ? 0 : GRID_W - 1; dir ? pos.x < GRID_W : pos.x > 0; dir ? pos.x++ : pos.x--) {
             ElementData& data = Get(pos);
             if (!valid_only || data.id != NONE)
                 callback(data, *this, pos);
@@ -88,31 +91,58 @@ void ElementGrid::DoForEach(ElementGridCallback callback, bool valid_only) {
 // Elements (Temp)
 //
 
+// Powder
+//
+void Powder::Update(ElementData& data, ElementGrid& grid, Vector2i& pos) {
+    if (!grid.IsEmpty(pos, Vector2iDOWN) && !grid.IsEmpty(pos, Vector2iLEFT) && !grid.IsEmpty(pos, Vector2iRIGHT) && !grid.IsEmpty(pos, Vector2iDOWNLEFT) && !grid.IsEmpty(pos, Vector2iDOWNRIGHT))
+        return;
+
+    if (grid.SwapIfEmpty(pos, Vector2iDOWN))
+        return;
+
+    if (grid.SwapIfEmpty(pos, Vector2iDOWNLEFT))
+        return;
+
+    if (grid.SwapIfEmpty(pos, Vector2iDOWNRIGHT))
+        return;
+}
+
 // Sand
-class Sand: public Element {
+class Sand: public Powder {
     void Create(ElementData& data, ElementGrid& grid, Vector2i& pos) override {
         data.id = SAND;
-    }
-
-    void Update(ElementData& data, ElementGrid& grid, Vector2i& pos) override {
-        if (!grid.IsEmpty(pos, Vector2iDOWN) && !grid.IsEmpty(pos, Vector2iLEFT) && !grid.IsEmpty(pos, Vector2iRIGHT) && !grid.IsEmpty(pos, Vector2iDOWNLEFT) && !grid.IsEmpty(pos, Vector2iDOWNRIGHT))
-            return;
-
-        if (grid.SwapIfEmpty(pos, Vector2iDOWN))
-            return;
-
-        if (grid.SwapIfEmpty(pos, Vector2iDOWNLEFT))
-            return;
-
-        if (grid.SwapIfEmpty(pos, Vector2iDOWNRIGHT))
-            return;
     }
 
     Color GetColor(ElementData& data, ElementGrid& grid, Vector2i& pos) override { return YELLOW; }
 };
 
+
+// Liquid
+//
+void Liquid::Update(ElementData& data, ElementGrid& grid, Vector2i& pos) {
+    if (!grid.IsEmpty(pos, Vector2iDOWN) && !grid.IsEmpty(pos, Vector2iLEFT) && !grid.IsEmpty(pos, Vector2iRIGHT))
+        return;
+
+    if (grid.SwapIfEmpty(pos, Vector2iDOWN))
+        return;
+
+    if (RandChance(0.5)) {
+        if (grid.SwapIfEmpty(pos, Vector2iLEFT))
+            return;
+
+        if (grid.SwapIfEmpty(pos, Vector2iRIGHT))
+            return;
+    } else {
+        if (grid.SwapIfEmpty(pos, Vector2iRIGHT))
+            return;
+
+        if (grid.SwapIfEmpty(pos, Vector2iLEFT))
+            return;
+    }
+}
+
 // Water
-class Water: public Element {
+class Water: public Liquid {
     void Create(ElementData& data, ElementGrid& grid, Vector2i& pos) override {
         data.id = WATER;
     }
