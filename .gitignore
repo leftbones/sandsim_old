@@ -1,5 +1,4 @@
-screens
-archive
+build/
 .vscode
 .DS_Store
 *.dSYM/
