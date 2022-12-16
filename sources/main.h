@@ -3,8 +3,9 @@
 #include "raylib.h"
 
 #include <iostream>
-#include <string>
 #include <cmath>
+#include <cstring>
+#include <string>
 #include <time.h>
 
 
@@ -23,3 +24,4 @@ extern int tick_count;
 
 bool RandChance(float chance);
 int RandRange(int min, int max);
+void DrawTextShadow(const char* text, int x, int y, int shadow_offset_x, int shadow_offset_y, int font_size, Color text_color, Color shadow_color);

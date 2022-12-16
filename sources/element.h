@@ -15,6 +15,15 @@ constexpr unsigned int WATER = 2;
 constexpr unsigned int OIL = 3;
 constexpr unsigned int FIRE = 4;
 constexpr unsigned int WOOD = 5;
+constexpr unsigned int GUNPOWDER = 6;
+
+// Element Colors
+constexpr Color C_SAND = { 255, 255, 0, 255 };
+constexpr Color C_WATER = { 0, 0, 255, 255 };
+constexpr Color C_OIL = { 140, 40, 40, 255 };
+constexpr Color C_FIRE = { 255, 0, 0, 255 };
+constexpr Color C_WOOD = { 85, 65, 40, 255 };
+constexpr Color C_GUNPOWDER = { 60, 50, 50, 255 };
 
 // Element Data
 struct ElementData {
