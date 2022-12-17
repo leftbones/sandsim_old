@@ -23,5 +23,6 @@
 extern int tick_count;
 
 bool RandChance(float chance);
+bool RandRoll(int roll);
 int RandRange(int min, int max);
 void DrawTextShadow(const char* text, int x, int y, int shadow_offset_x, int shadow_offset_y, int font_size, Color text_color, Color shadow_color);

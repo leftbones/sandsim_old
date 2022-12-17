@@ -1,13 +1,12 @@
 #include "main.h"
 #include "element.h"
-#include "menu.h"
 
 using namespace std;
 
 int tick_count = 0;
 int brush_element = 1;
 int brush_size = 15;
-float brush_density = 0.75;
+float brush_density = 20;
 
 
 // Utility
@@ -15,6 +14,11 @@ float brush_density = 0.75;
 bool RandChance(float chance) {
     float roll = ((float)rand()) / (float)RAND_MAX;
     return ceil(roll * 100) / 100 <= chance;
+}
+
+bool RandRoll(int roll) {
+    if (roll == 0) return false;
+    return (1 + rand() % roll) == roll;
 }
 
 int RandRange(int min, int max) {
@@ -31,7 +35,7 @@ void DrawTextShadow(const char* text, int x, int y, int shadow_offset_x, int sha
 //
 int main() {
     InitWindow(SCREEN_W, SCREEN_H, "SandSim");
-    SetTargetFPS(120);
+    SetTargetFPS(166);
     srand(time(NULL));
     HideCursor();
 
@@ -42,10 +46,6 @@ int main() {
     // Texture
     Image backBuffer = GenImageColor(GRID_W, GRID_H, BLACK);
     Texture bufferTexture = LoadTextureFromImage(backBuffer);
-
-    // Menu
-    Menu element_menu = Menu();
-    element_menu.Toggle();
 
     // Main Loop
     //
@@ -59,13 +59,8 @@ int main() {
 
         int mouse_wheel = (int)GetMouseWheelMove();
 
-        // Element Grid
-        grid.DoForEach([](ElementData& data, ElementGrid& grid, Vector2i& pos) {
-            GetElement(data.id)->Update(data, grid, pos);
-        });
-
         // Spout
-        if (RandChance(0.75)) {
+        if (RandRoll(2)) {
             Vector2i pos { (GRID_W / 2) + RandRange(-2, 2), 0 };
             ElementData& data = grid.Get(pos);
             GetElement(SAND)->Create(data, grid, pos);
@@ -75,7 +70,33 @@ int main() {
         int brush_x = (mouse_x / SCALE);
         int brush_y = (mouse_y / SCALE);
 
-        brush_density = min(15, brush_size * 2);
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+            int bx = brush_x - (brush_size / 2);
+            int by = brush_y - (brush_size / 2);
+
+            for (int x = bx; x < bx + brush_size; x++) {
+                for (int y = by; y < by + brush_size; y++) {
+                    if (RandRoll(brush_density)) {
+                        Vector2i pos {x, y};
+                        ElementData& data = grid.Get(pos);
+                        GetElement(brush_element)->Create(data, grid, pos);
+                    }
+                }
+            }
+        }
+
+        // Brush Erasing
+        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+            int bx = brush_x - (brush_size / 2);
+            int by = brush_y - (brush_size / 2);
+            for (int x = bx; x < bx + brush_size; x++) {
+                for (int y = by; y < by + brush_size; y++) {
+                    Vector2i pos {x, y};
+                    ElementData& data = grid.Get(pos);
+                    data.id = NONE;
+                }
+            }
+        }
 
         // Brush Sizing
         if (IsKeyDown(KEY_LEFT_SHIFT))
@@ -89,10 +110,17 @@ int main() {
         if (brush_size < MIN_BRUSH)
             brush_size = MIN_BRUSH;
 
-        // Menu Scrolling
-        if (element_menu.is_open && mouse_wheel != 0) {
-            element_menu.scroll += round(mouse_wheel) * 20;
-        }
+        // Element Selection
+        if (IsKeyDown(KEY_Q) && brush_element > SAND)
+            brush_element--;
+
+        if (IsKeyDown(KEY_E) && brush_element < WATER)
+            brush_element++;
+
+        // Element Grid
+        grid.DoForEach([](ElementData& data, ElementGrid& grid, Vector2i& pos) {
+            GetElement(data.id)->Update(data, grid, pos);
+        });
 
         // Update Texture
         ImageClearBackground(&backBuffer, BLACK);
@@ -110,30 +138,18 @@ int main() {
         ClearBackground(BLACK);
 
         // Texture
-        DrawTexturePro(bufferTexture, Rectangle {0, 0, float(bufferTexture.width), float(bufferTexture.height) }, Rectangle { 0, 0, SCREEN_W, SCREEN_H }, Vector2 { 0, 0 }, 0, WHITE);
-
-        // Menu
-        if (element_menu.is_open)
-            element_menu.Draw();
+        DrawTexturePro(bufferTexture, Rectangle {0, 0, GRID_W, GRID_H }, Rectangle { 0, 0, SCREEN_W, SCREEN_H }, Vector2 { 0, 0 }, 0, WHITE);
 
         // Cursor/Brush
-        if (element_menu.is_open) {
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                DrawRectangle((brush_x * SCALE) + 1, (brush_y * SCALE) + 1, 8, 8, DARKGRAY);
-                DrawRectangle(brush_x * SCALE, brush_y * SCALE, 8, 8, WHITE);
-            } else {
-                DrawRectangleLines((brush_x * SCALE) + 1, (brush_y * SCALE) + 1, 8, 8, DARKGRAY);
-                DrawRectangleLines(brush_x * SCALE, brush_y * SCALE, 8, 8, WHITE);
-            }
-        } else {
-            DrawRectangleLines(((brush_x * SCALE) - (brush_size / 2) * SCALE) + 1, ((brush_y * SCALE) - (brush_size / 2) * SCALE) + 1, brush_size * SCALE, brush_size * SCALE, DARKGRAY);
-            DrawRectangleLines(((brush_x * SCALE) - (brush_size / 2) * SCALE), ((brush_y * SCALE) - (brush_size / 2) * SCALE), brush_size * SCALE, brush_size * SCALE, WHITE);
-        }
+        DrawRectangleLines(((brush_x * SCALE) - (brush_size / 2) * SCALE) + 1, ((brush_y * SCALE) - (brush_size / 2) * SCALE) + 1, brush_size * SCALE, brush_size * SCALE, DARKGRAY);
+        DrawRectangleLines(((brush_x * SCALE) - (brush_size / 2) * SCALE), ((brush_y * SCALE) - (brush_size / 2) * SCALE), brush_size * SCALE, brush_size * SCALE, WHITE);
 
         // Info
         DrawTextShadow(TextFormat("BRUSH: %i", brush_size), 10, 10, 1, 1, 20, WHITE, DARKGRAY);
+        DrawTextShadow(TextFormat("ELEMENT: %s", GetElement(brush_element)->name.c_str()), 10, 30, 2, 2, 20, WHITE, DARKGRAY);
+        DrawTextShadow(TextFormat("X: %i Y: %i", mouse_x, mouse_y), 10, 50, 2, 2, 20, WHITE, DARKGRAY);
 
-        DrawTextShadow(TextFormat("FPS: %i", GetFPS()), 10, SCREEN_H - 30, 1, 1, 20, WHITE, DARKGRAY);
+        DrawTextShadow(TextFormat("FPS: %i", GetFPS()), 10, SCREEN_H - 30, 2, 2, 20, WHITE, DARKGRAY);
         EndDrawing();
     }
 

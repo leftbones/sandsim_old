@@ -69,7 +69,7 @@ bool ElementGrid::SwapIfEmpty(const Vector2i& pos, const Vector2i& offset) {
 }
 
 // DoForEach
-void ElementGrid::DoForEach(ElementGridCallback callback, bool valid_only) {
+void ElementGrid::DoForEach(ElementGridCallback callback) {
     if (!callback)
         return;
 
@@ -81,7 +81,7 @@ void ElementGrid::DoForEach(ElementGridCallback callback, bool valid_only) {
     for (pos.y = GRID_H - 1; pos.y >= 0; pos.y--) {
         for (pos.x = dir ? 0 : GRID_W - 1; dir ? pos.x < GRID_W : pos.x > 0; dir ? pos.x++ : pos.x--) {
             ElementData& data = Get(pos);
-            if (!valid_only || data.id != NONE)
+            if (data.id != NONE)
                 callback(data, *this, pos);
         }
     }
@@ -111,6 +111,7 @@ void Powder::Update(ElementData& data, ElementGrid& grid, Vector2i& pos) {
 class Sand: public Powder {
     void Create(ElementData& data, ElementGrid& grid, Vector2i& pos) override {
         data.id = SAND;
+        name = "Sand";
     }
 
     Color GetColor(ElementData& data, ElementGrid& grid, Vector2i& pos) override { return YELLOW; }
@@ -126,7 +127,7 @@ void Liquid::Update(ElementData& data, ElementGrid& grid, Vector2i& pos) {
     if (grid.SwapIfEmpty(pos, Vector2iDOWN))
         return;
 
-    if (RandChance(0.5)) {
+    if (RandRoll(2)) {
         if (grid.SwapIfEmpty(pos, Vector2iLEFT))
             return;
 
@@ -145,6 +146,7 @@ void Liquid::Update(ElementData& data, ElementGrid& grid, Vector2i& pos) {
 class Water: public Liquid {
     void Create(ElementData& data, ElementGrid& grid, Vector2i& pos) override {
         data.id = WATER;
+        name = "Water";
     }
 
     Color GetColor(ElementData& data, ElementGrid& grid, Vector2i& pos) override { return BLUE; }

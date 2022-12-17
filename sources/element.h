@@ -69,12 +69,13 @@ class ElementGrid {
         void Swap(const Vector2i& pos1, const Vector2i& offset); // Swap two elements in the grid regardless of type
         bool SwapIfEmpty(const Vector2i& pos, const Vector2i& offset); // Swap two elements in the grid if one of them is empty
 
-        void DoForEach(ElementGridCallback callback, bool valid_only = true); // Perform a callback for all elements in the grid or for only valid elements (not none)
+        void DoForEach(ElementGridCallback callback); // Perform a callback for all elements in the grid not including NONE elements
 };
 
 // Base Element
 class Element {
     public:
+        string name;
         virtual ~Element() = default;
         virtual void Create(ElementData& data, ElementGrid& grid, Vector2i& pos) {}
         virtual void Update(ElementData& data, ElementGrid& grid, Vector2i& pos) {}
