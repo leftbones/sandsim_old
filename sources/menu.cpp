@@ -22,25 +22,37 @@ void Menu::Draw() {
 }
 
 void Menu::ListPowder() {
-
+    int offset = scroll;
+    for (int i = 0; i < items_powder.size(); i++) {
+        MenuItem* item = items_powder[i];
+        DrawRectangle(origin.x, origin.y + (list_gap * i) + offset, item_size.x, item_size.y, item->color);
+        DrawTextShadow(item->name.c_str(), origin.x + item_size.x + 10, origin.y + (list_gap * i) + offset + 4, 2, 2, 20, WHITE, BLACK);
+    }
 }
 
 void Menu::ListSolid() {
-
+    int offset = scroll + (list_gap * (items_powder.size() + 2));
+    for (int i = 0; i < items_solid.size(); i++) {
+        MenuItem* item = items_solid[i];
+        DrawRectangle(origin.x, origin.y + (list_gap * i) + offset, item_size.x, item_size.y, item->color);
+        DrawTextShadow(item->name.c_str(), origin.x + item_size.x + 10, origin.y + (list_gap * i) + offset + 4, 2, 2, 20, WHITE, BLACK);
+    }
 }
 
 void Menu::ListLiquid() {
-
+    int offset = scroll + (list_gap * (items_powder.size() + items_solid.size() + 3));
+    for (int i = 0; i < items_liquid.size(); i++) {
+        MenuItem* item = items_liquid[i];
+        DrawRectangle(origin.x, origin.y + (list_gap * i) + offset, item_size.x, item_size.y, item->color);
+        DrawTextShadow(item->name.c_str(), origin.x + item_size.x + 10, origin.y + (list_gap * i) + offset + 4, 2, 2, 20, WHITE, BLACK);
+    }
 }
 
 void Menu::ListGas() {
-
+    int offset = scroll + (list_gap * (items_powder.size() + items_solid.size()  + items_gas.size() + 5));
+    for (int i = 0; i < items_gas.size(); i++) {
+        MenuItem* item = items_gas[i];
+        DrawRectangle(origin.x, origin.y + (list_gap * i) + offset, item_size.x, item_size.y, item->color);
+        DrawTextShadow(item->name.c_str(), origin.x + item_size.x + 10, origin.y + (list_gap * i) + offset + 4, 2, 2, 20, WHITE, BLACK);
+    }
 }
-
-// void MenuItem::Draw(int scroll) { !! REMOVED !!
-//     if (selected)
-//         DrawRectangleLinesEx(Rectangle { rect.x - 3, (rect.y - 3) + scroll, rect.width + 6, rect.height + 6 }, 2.0, WHITE);
-
-//     DrawRectangle(rect.x, rect.y + scroll, rect.width, rect.height, color);
-//     DrawTextShadow(name.c_str(), rect.x + (rect.width + 10), (rect.y + scroll) + (rect.height / 6), 2, 2, 20, WHITE, BLACK);
-// }

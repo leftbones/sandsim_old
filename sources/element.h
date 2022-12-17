@@ -23,7 +23,7 @@ constexpr Color C_WATER = { 0, 0, 255, 255 };
 constexpr Color C_OIL = { 140, 40, 40, 255 };
 constexpr Color C_FIRE = { 255, 0, 0, 255 };
 constexpr Color C_WOOD = { 85, 65, 40, 255 };
-constexpr Color C_GUNPOWDER = { 60, 50, 50, 255 };
+constexpr Color C_GUNPOWDER = { 80, 60, 60, 255 };
 
 // Element Data
 struct ElementData {

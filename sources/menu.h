@@ -33,12 +33,20 @@ class Menu {
         Color color = {255, 255, 255, 50};
 
         Vector2 origin = { SCREEN_W - (float)(width - 10), 10 };
-        Vector2 size = { 40, 24 };
-        float gap = 32;
+        Vector2 item_size = { 40, 24 };
+        float list_gap = 32;
         int scroll = 0;
 
         Menu() {
+            items_powder.push_back(new MenuItem("Sand", C_SAND));
+            items_powder.push_back(new MenuItem("Gunpowder", C_GUNPOWDER));
 
+            items_solid.push_back(new MenuItem("Wood", C_WOOD));
+
+            items_liquid.push_back(new MenuItem("Water", C_WATER));
+            items_liquid.push_back(new MenuItem("Oil", C_OIL));
+
+            items_gas.push_back(new MenuItem("Fire", C_FIRE));
         }
 
         void Toggle();
