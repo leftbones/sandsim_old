@@ -1,19 +1,35 @@
-cmake_minimum_required(VERSION 3.0.0)
-project(SandSim VERSION 0.1.0)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED On)
+﻿cmake_minimum_required (VERSION 3.8)
+project ("sandsim")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS)
 
-include(FetchContent)
-set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(raylib GIT_REPOSITORY https://github.com/raysan5/raylib.git GIT_TAG master)
-FetchContent_MakeAvailable(raylib)
+set(RAYLIB_VERSION 4.2.0)
+find_package(raylib ${RAYLIB_VERSION} QUIET) # QUIET or REQUIRED
+if (NOT raylib_FOUND) # If there's none, fetch and build raylib
+  include(FetchContent)
+  FetchContent_Declare(
+    raylib
+    URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.tar.gz
+  )
+  FetchContent_GetProperties(raylib)
+  if (NOT raylib_POPULATED) # Have we downloaded raylib yet?
+    set(FETCHCONTENT_QUIET NO)
+    FetchContent_Populate(raylib)
+    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
+    add_subdirectory(${raylib_SOURCE_DIR} ${raylib_BINARY_DIR})
+  endif()
+endif()
 
-file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/sources/**")
+set(PROJECT_SOURCES
+"${CMAKE_CURRENT_SOURCE_DIR}/sources/main.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/sources/main.h"
+"${CMAKE_CURRENT_SOURCE_DIR}/sources/element.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/sources/element.h"
+)
 
-add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE})
-target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
+add_executable (sandsim ${PROJECT_SOURCES})
+target_link_libraries(sandsim PRIVATE raylib)
+
+if (CMAKE_VERSION VERSION_GREATER 3.12)
+  set_property(TARGET sandsim PROPERTY CXX_STANDARD 20)
+endif()

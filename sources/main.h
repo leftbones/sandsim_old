@@ -1,28 +1,59 @@
-#pragma once
+﻿#pragma once
 
 #include "raylib.h"
 
 #include <iostream>
+#include <vector>
 #include <cmath>
 #include <cstring>
 #include <string>
 #include <time.h>
 
 
+// Screen Parameters
+//
 #define SCREEN_W 960
 #define SCREEN_H 720
 
 #define SCALE 2
 
-#define GRID_W (SCREEN_W / SCALE)
-#define GRID_H (SCREEN_H / SCALE)
 
+// Brush Parameters
+//
 #define MIN_BRUSH 1
-#define MAX_BRUSH (75 * SCALE)
+#define MAX_BRUSH (50 * SCALE)
 
 extern int tick_count;
+extern std::string& element_name;
 
-bool RandChance(float chance);
 bool RandRoll(int roll);
+bool RandChance(float chance);
 int RandRange(int min, int max);
-void DrawTextShadow(const char* text, int x, int y, int shadow_offset_x, int shadow_offset_y, int font_size, Color text_color, Color shadow_color);
+
+
+// Vector2i
+//
+struct Vector2i {
+	int x = 0;
+	int y = 0;
+};
+
+constexpr Vector2i V_NONE = {0, 0};
+constexpr Vector2i V_LEFT = {-1, 0};
+constexpr Vector2i V_RIGHT = {1, 0};
+constexpr Vector2i V_BELOW = {0, 1};
+constexpr Vector2i V_BELOW_LEFT = {-1, 1};
+constexpr Vector2i V_BELOW_RIGHT = {1, 1};
+constexpr Vector2i V_ABOVE = {0, -1};
+constexpr Vector2i V_ABOVE_LEFT = {-1, -1};
+constexpr Vector2i V_ABOVE_RIGHT = {1, -1};
+
+
+// Element IDs
+//
+
+constexpr unsigned int AIR = 0;
+constexpr unsigned int SAND = 1;
+constexpr unsigned int WATER = 2;
+constexpr unsigned int WOOD = 3;
+constexpr unsigned int FIRE = 4;

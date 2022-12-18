@@ -1,43 +1,34 @@
 #include "element.h"
 
-using namespace std;
 
 // Element Grid
 //
-ElementGrid::ElementGrid(int x, int y) {
-    Elements.resize(x * y);
-}
-
-// Get
 ElementData& ElementGrid::Get(const Vector2i& pos) {
-    return Elements[(GRID_W * pos.y) + pos.x];
+	return elements[(GRID_W * pos.y) + pos.x];
 }
 
 ElementData& ElementGrid::Get(const Vector2i& pos, const Vector2i& offset) {
-    return Elements[(GRID_W * (pos.y + offset.y)) + (pos.x + offset.x)];
+    return elements[(GRID_W * (pos.y + offset.y)) + (pos.x + offset.x)];
 }
 
-// Set
 void ElementGrid::Set(const Vector2i& pos, unsigned int id) {
     if (InBounds(pos))
         Get(pos).id = id;
 }
 
-void ElementGrid::Set(const Vector2i& pos, const Vector2i& offset, unsigned int id) {
+void ElementGrid::Set(const Vector2i& pos, Vector2i& offset, unsigned int id) {
     if (InBounds(pos, offset))
         Get(pos, offset).id = id;
 }
 
-// IsEmpty
 bool ElementGrid::IsEmpty(const Vector2i& pos) {
-    return InBounds(pos) && Get(pos).id == NONE;
+    return InBounds(pos) && Get(pos).id == AIR;
 }
 
 bool ElementGrid::IsEmpty(const Vector2i& pos, const Vector2i& offset) {
-    return InBounds(pos, offset) && Get(pos, offset).id == NONE;
+    return InBounds(pos, offset) && Get(pos, offset).id == AIR;
 }
 
-// InBounds
 bool ElementGrid::InBounds(const Vector2i& pos) {
     return pos.x >= 0 && pos.x < GRID_W && pos.y >= 0 && pos.y < GRID_H;
 }
@@ -46,7 +37,6 @@ bool ElementGrid::InBounds(const Vector2i& pos, const Vector2i& offset) {
     return pos.x + offset.x >= 0 && pos.x + offset.x < GRID_W && pos.y + offset.y >= 0 && pos.y + offset.y < GRID_H;
 }
 
-// Swap
 void ElementGrid::Swap(const Vector2i& pos, const Vector2i& offset) {
     if (!InBounds(pos, offset))
         return;
@@ -57,109 +47,155 @@ void ElementGrid::Swap(const Vector2i& pos, const Vector2i& offset) {
     unsigned int id1 = e1.id;
     e1.id = e2.id;
     e2.id = id1;
+
+	int life1 = e1.life;
+	e1.life = e2.life;
+	e2.life = life1;
 }
 
-// SwapIfEmpty
 bool ElementGrid::SwapIfEmpty(const Vector2i& pos, const Vector2i& offset) {
-    if (!InBounds(pos, offset) || Get(pos, offset).id != NONE)
+    if (!InBounds(pos, offset) || Get(pos, offset).id != AIR)
         return false;
 
     Swap(pos, offset);
     return true;
 }
 
-// DoForEach
-void ElementGrid::DoForEach(ElementGridCallback callback) {
-    if (!callback)
-        return;
 
-    static Vector2i pos;
-
-    bool is_even_tick = ((tick_count % 2) == 0);
-    int dir = is_even_tick ? 0 : 1;
-
-    for (pos.y = GRID_H - 1; pos.y >= 0; pos.y--) {
-        for (pos.x = dir ? 0 : GRID_W - 1; dir ? pos.x < GRID_W : pos.x > 0; dir ? pos.x++ : pos.x--) {
-            ElementData& data = Get(pos);
-            if (data.id != NONE)
-                callback(data, *this, pos);
-        }
-    }
-}
-
-
-// Elements (Temp)
+// Base Elements (Temp)
 //
+void Powder::Update(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+	if (!grid.IsEmpty(pos, V_BELOW) && !grid.IsEmpty(pos, V_LEFT) && !grid.IsEmpty(pos, V_RIGHT) && !grid.IsEmpty(pos, V_BELOW_LEFT) && !grid.IsEmpty(pos, V_BELOW_RIGHT))
+	return;
 
-// Powder
-//
-void Powder::Update(ElementData& data, ElementGrid& grid, Vector2i& pos) {
-    if (!grid.IsEmpty(pos, Vector2iDOWN) && !grid.IsEmpty(pos, Vector2iLEFT) && !grid.IsEmpty(pos, Vector2iRIGHT) && !grid.IsEmpty(pos, Vector2iDOWNLEFT) && !grid.IsEmpty(pos, Vector2iDOWNRIGHT))
+    if (grid.SwapIfEmpty(pos, V_BELOW))
         return;
 
-    if (grid.SwapIfEmpty(pos, Vector2iDOWN))
+    if (grid.SwapIfEmpty(pos, V_BELOW_LEFT))
         return;
 
-    if (grid.SwapIfEmpty(pos, Vector2iDOWNLEFT))
-        return;
-
-    if (grid.SwapIfEmpty(pos, Vector2iDOWNRIGHT))
+    if (grid.SwapIfEmpty(pos, V_BELOW_RIGHT))
         return;
 }
 
-// Sand
-class Sand: public Powder {
-    void Create(ElementData& data, ElementGrid& grid, Vector2i& pos) override {
-        data.id = SAND;
-        name = "Sand";
-    }
+void Solid::Update(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+	return;
+}
 
-    Color GetColor(ElementData& data, ElementGrid& grid, Vector2i& pos) override { return YELLOW; }
+void Liquid::Update(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+	if (!grid.IsEmpty(pos, V_BELOW) && !grid.IsEmpty(pos, V_LEFT) && !grid.IsEmpty(pos, V_RIGHT))
+		return;
+
+    if (grid.SwapIfEmpty(pos, V_BELOW))
+        return;
+
+	int dist = RandRange(1, 4);
+
+	if (RandRoll(2)) {
+		if (grid.SwapIfEmpty(pos, Vector2i{-dist, 0}))
+			return;
+
+		if (grid.SwapIfEmpty(pos, Vector2i{dist, 0}))
+			return;
+	} else {
+		if (grid.SwapIfEmpty(pos, Vector2i{dist, 0}))
+			return;
+
+		if (grid.SwapIfEmpty(pos, Vector2i{-dist, 0}))
+			return;
+	}
+}
+
+void Gas::Update(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+	data.life--;
+
+	if (data.life <= 0) {
+		GetElement(AIR)->Create(grid, data, pos);
+		return;
+	}
+
+	if (!grid.IsEmpty(pos, V_ABOVE) && !grid.IsEmpty(pos, V_LEFT) && !grid.IsEmpty(pos, V_RIGHT) && !grid.IsEmpty(pos, V_ABOVE_LEFT) && !grid.IsEmpty(pos, V_ABOVE_RIGHT))
+		return;
+
+	if (RandChance(0.60) && grid.SwapIfEmpty(pos, V_ABOVE))
+		return;
+
+	if (RandChance(0.10) && grid.SwapIfEmpty(pos, V_ABOVE_LEFT))
+		return;
+
+	if (RandChance(0.10) && grid.SwapIfEmpty(pos, V_ABOVE_RIGHT))
+		return;
+
+	if (RandChance(0.50) && grid.SwapIfEmpty(pos, V_LEFT))
+		return;
+
+	if (RandChance(0.50) && grid.SwapIfEmpty(pos, V_RIGHT))
+		return;
+}
+
+
+// Element Types (Temp)
+//
+class Air : public Gas {
+	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+		data.id = AIR;
+		name = "Air";
+	}
+
+	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return BLACK; }
 };
 
+class Sand : public Powder {
+	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+		data.id = SAND;
+		name = "Sand";
+	}
 
-// Liquid
-//
-void Liquid::Update(ElementData& data, ElementGrid& grid, Vector2i& pos) {
-    if (!grid.IsEmpty(pos, Vector2iDOWN) && !grid.IsEmpty(pos, Vector2iLEFT) && !grid.IsEmpty(pos, Vector2iRIGHT))
-        return;
+	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return YELLOW; }
+};
 
-    if (grid.SwapIfEmpty(pos, Vector2iDOWN))
-        return;
+class Water : public Liquid {
+	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+		data.id = WATER;
+		name = "Water";
+	}
 
-    if (RandRoll(2)) {
-        if (grid.SwapIfEmpty(pos, Vector2iLEFT))
-            return;
+	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return BLUE; }
+};
 
-        if (grid.SwapIfEmpty(pos, Vector2iRIGHT))
-            return;
-    } else {
-        if (grid.SwapIfEmpty(pos, Vector2iRIGHT))
-            return;
+class Wood : public Solid {
+	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+		data.id = WOOD;
+		name = "Wood";
+	}
 
-        if (grid.SwapIfEmpty(pos, Vector2iLEFT))
-            return;
-    }
-}
+	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return BROWN; }
+};
 
-// Water
-class Water: public Liquid {
-    void Create(ElementData& data, ElementGrid& grid, Vector2i& pos) override {
-        data.id = WATER;
-        name = "Water";
-    }
+class Fire : public Gas {
+	public:
+		static constexpr int burn_time = 120;
 
-    Color GetColor(ElementData& data, ElementGrid& grid, Vector2i& pos) override { return BLUE; }
+	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+		data.id = FIRE;
+		data.life = burn_time;
+		name = "Fire";
+	}
+
+	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return RED; }
 };
 
 
 // Element Registry
 //
 Element* GetElement(unsigned int id) {
-    return Elements[id];
+	return Elements[id];
 }
 
 void RegisterElements() {
-    Elements.insert_or_assign(SAND, new Sand());
-    Elements.insert_or_assign(WATER, new Water());
+	Elements[0] = new Air();
+	Elements[1] = new Sand();
+	Elements[2] = new Water();
+	Elements[3] = new Wood();
+	Elements[4] = new Fire();
 }

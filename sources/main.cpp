@@ -1,28 +1,28 @@
-#include "main.h"
+﻿#include "main.h"
 #include "element.h"
 
-using namespace std;
-
 int tick_count = 0;
+int brush_size = 1;
 int brush_element = 1;
-int brush_size = 15;
-float brush_density = 20;
 
+static std::string ElementNames[5] = {
+	"Air", "Sand", "Water", "Wood", "Fire"
+};
 
 // Utility
 //
-bool RandChance(float chance) {
-    float roll = ((float)rand()) / (float)RAND_MAX;
-    return ceil(roll * 100) / 100 <= chance;
+bool RandRoll(int roll) {
+	if (roll == 0) return false;
+	return (1 + rand() % roll) == roll;
 }
 
-bool RandRoll(int roll) {
-    if (roll == 0) return false;
-    return (1 + rand() % roll) == roll;
+bool RandChance(float chance) {
+	float roll = ((float)rand()) / (float)RAND_MAX;
+	return ceil(roll * 100) / 100 <= chance;
 }
 
 int RandRange(int min, int max) {
-    return rand() % (max + 1 - min) + min;
+	return rand() % (max + 1 - min) + min;
 }
 
 void DrawTextShadow(const char* text, int x, int y, int shadow_offset_x, int shadow_offset_y, int font_size, Color text_color, Color shadow_color) {
@@ -30,131 +30,190 @@ void DrawTextShadow(const char* text, int x, int y, int shadow_offset_x, int sha
 	DrawText(text, x, y, font_size, text_color);
 }
 
+int ClampInt(int value, int min, int max) {
+	const int number = value < min ? min : value;
+	return number > max ? max : number;
+}
 
-// Main
+Color OffsetColor(Color color, int min, int max) {
+	int offset = RandRange(min, max);
+	Color new_color = color;
+	new_color.r = ClampInt(new_color.r + offset, 15, 255);
+	new_color.g = ClampInt(new_color.g + offset, 15, 255);
+	new_color.b = ClampInt(new_color.b + offset, 15, 255);
+	return new_color;
+}
+
+
+// Main Loop
 //
 int main() {
-    InitWindow(SCREEN_W, SCREEN_H, "SandSim");
-    SetTargetFPS(166);
-    srand(time(NULL));
-    HideCursor();
+	InitWindow(SCREEN_W, SCREEN_H, "SandSimPlusPlus");
+	SetTargetFPS(166);
+	srand((int)time(NULL));
+	HideCursor();
 
-    // Elements
-    RegisterElements();
-    ElementGrid grid(GRID_W, GRID_H);
+	// Preferences
+	bool show_grid = false;
 
-    // Texture
-    Image backBuffer = GenImageColor(GRID_W, GRID_H, BLACK);
-    Texture bufferTexture = LoadTextureFromImage(backBuffer);
+	// Texture
+	Image backBuffer = GenImageColor(GRID_W, GRID_H, BLACK);
+	Texture bufferTexture = LoadTextureFromImage(backBuffer);
 
-    // Main Loop
-    //
-    while (!WindowShouldClose()) {
-        // Update
-        //
-        tick_count++;
+	// Elements
+	ElementGrid grid(GRID_W, GRID_H);
+	RegisterElements();
 
-        int mouse_x = (int)GetMouseX();
-        int mouse_y = (int)GetMouseY();
+	for (int x = 0; x < GRID_W; x++) {
+		for (int y = 0; y < GRID_H; y++) {
+			Vector2i pos = { x, y };
+			ElementData& data = grid.Get(pos);
+			GetElement(AIR)->Create(grid, data, pos);
+		}
+	}
 
-        int mouse_wheel = (int)GetMouseWheelMove();
+	std::string element_name = ElementNames[brush_element];
 
-        // Spout
-        if (RandRoll(2)) {
-            Vector2i pos { (GRID_W / 2) + RandRange(-2, 2), 0 };
-            ElementData& data = grid.Get(pos);
-            GetElement(SAND)->Create(data, grid, pos);
-        }
 
-        // Brush Painting
-        int brush_x = (mouse_x / SCALE);
-        int brush_y = (mouse_y / SCALE);
+	// Main Loop
+	//
+	while (!WindowShouldClose()) {
+		// Update
+		//
+		tick_count++;
 
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-            int bx = brush_x - (brush_size / 2);
-            int by = brush_y - (brush_size / 2);
+		int mouse_x = (int)GetMouseX();
+		int mouse_y = (int)GetMouseY();
 
-            for (int x = bx; x < bx + brush_size; x++) {
-                for (int y = by; y < by + brush_size; y++) {
-                    if (RandRoll(brush_density)) {
-                        Vector2i pos {x, y};
-                        ElementData& data = grid.Get(pos);
-                        GetElement(brush_element)->Create(data, grid, pos);
-                    }
-                }
-            }
-        }
+		int mouse_wheel = (int)GetMouseWheelMove();
 
-        // Brush Erasing
-        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-            int bx = brush_x - (brush_size / 2);
-            int by = brush_y - (brush_size / 2);
-            for (int x = bx; x < bx + brush_size; x++) {
-                for (int y = by; y < by + brush_size; y++) {
-                    Vector2i pos {x, y};
-                    ElementData& data = grid.Get(pos);
-                    data.id = NONE;
-                }
-            }
-        }
+		// Sand Spout
+		if (RandChance(0.75)) {
+			Vector2i pos = { (GRID_W / 2) + RandRange(-2, 2), 0 };
+			ElementData& data = grid.Get(pos);
+			GetElement(SAND)->Create(grid, data, pos);
+		}
 
-        // Brush Sizing
-        if (IsKeyDown(KEY_LEFT_SHIFT))
-            mouse_wheel *= 10;
+		// Brush Painting
+		int brush_x = (mouse_x / SCALE);
+		int brush_y = (mouse_y / SCALE);
 
-        brush_size -= round(mouse_wheel);
+		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+			int bx = brush_x - (brush_size / 2);
+			int by = brush_y - (brush_size / 2);
 
-        if (brush_size > MAX_BRUSH)
-            brush_size = MAX_BRUSH;
+			for (int x = bx; x < bx + brush_size; x++) {
+				for (int y = by; y < by + brush_size; y++) {
+					Vector2i pos = { x, y };
+					if (RandChance(0.05) && grid.IsEmpty(pos)) {
+						ElementData& data = grid.Get(pos);
+						GetElement(brush_element)->Create(grid, data, pos);
+					}
+				}
+			}
+		}
 
-        if (brush_size < MIN_BRUSH)
-            brush_size = MIN_BRUSH;
+		// Brush Erasing
+		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+			int bx = brush_x - (brush_size / 2);
+			int by = brush_y - (brush_size / 2);
 
-        // Element Selection
-        if (IsKeyDown(KEY_Q) && brush_element > SAND)
-            brush_element--;
+			for (int x = bx; x < bx + brush_size; x++) {
+				for (int y = by; y < by + brush_size; y++) {
+					Vector2i pos = { x, y };
+					if (grid.InBounds(pos) && !grid.IsEmpty(pos)) {
+						ElementData& data = grid.Get(pos);
+						GetElement(AIR)->Create(grid, data, pos);
+					}
+				}
+			}
+		}
 
-        if (IsKeyDown(KEY_E) && brush_element < WATER)
-            brush_element++;
+		// Brush Size
+		if (IsKeyDown(KEY_LEFT_SHIFT))
+			mouse_wheel *= 10;
 
-        // Element Grid
-        grid.DoForEach([](ElementData& data, ElementGrid& grid, Vector2i& pos) {
-            GetElement(data.id)->Update(data, grid, pos);
-        });
+		brush_size -= round(mouse_wheel);
 
-        // Update Texture
-        ImageClearBackground(&backBuffer, BLACK);
+		if (brush_size > MAX_BRUSH) {
+			brush_size = MAX_BRUSH;
+		}
 
-        grid.DoForEach([&backBuffer](ElementData& data, ElementGrid& grid, Vector2i& pos) {
-            Color c = GetElement(data.id)->GetColor(data, grid, pos);
-            ImageDrawPixel(&backBuffer, pos.x, pos.y, c);
-        });
+		if (brush_size < MIN_BRUSH) {
+			brush_size = MIN_BRUSH;
+		}
 
-        UpdateTexture(bufferTexture, backBuffer.data);
+		// Next/Previous Brush Element
+		if (IsKeyPressed(KEY_W) && brush_element < FIRE) {
+			brush_element++;
+			element_name = ElementNames[brush_element];
+		}
 
-        // Draw
-        //
-        BeginDrawing();
-        ClearBackground(BLACK);
+		if (IsKeyPressed(KEY_S) && brush_element > SAND) {
+			brush_element--;
+			element_name = ElementNames[brush_element];
+		}
 
-        // Texture
-        DrawTexturePro(bufferTexture, Rectangle {0, 0, GRID_W, GRID_H }, Rectangle { 0, 0, SCREEN_W, SCREEN_H }, Vector2 { 0, 0 }, 0, WHITE);
+		// Element Grid
+		bool is_even_tick = ((tick_count % 2) == 0);
+		int dir = is_even_tick ? 0 : 1;
 
-        // Cursor/Brush
-        DrawRectangleLines(((brush_x * SCALE) - (brush_size / 2) * SCALE) + 1, ((brush_y * SCALE) - (brush_size / 2) * SCALE) + 1, brush_size * SCALE, brush_size * SCALE, DARKGRAY);
-        DrawRectangleLines(((brush_x * SCALE) - (brush_size / 2) * SCALE), ((brush_y * SCALE) - (brush_size / 2) * SCALE), brush_size * SCALE, brush_size * SCALE, WHITE);
+		for (int y = GRID_H - 1; y >= 0; y--) {
+			for (int x = dir ? 0 : GRID_W - 1; dir ? x < GRID_W : x > 0; dir ? x++ : x--) {
+				Vector2i pos = { x, y };
+				ElementData& data = grid.Get(pos);
+				if (data.id != AIR)
+					GetElement(data.id)->Update(grid, data, pos);
+			}
+		}
 
-        // Info
-        DrawTextShadow(TextFormat("BRUSH: %i", brush_size), 10, 10, 1, 1, 20, WHITE, DARKGRAY);
-        DrawTextShadow(TextFormat("ELEMENT: %s", GetElement(brush_element)->name.c_str()), 10, 30, 2, 2, 20, WHITE, DARKGRAY);
-        DrawTextShadow(TextFormat("X: %i Y: %i", mouse_x, mouse_y), 10, 50, 2, 2, 20, WHITE, DARKGRAY);
+		// Texture
+		ImageClearBackground(&backBuffer, BLACK);
 
-        DrawTextShadow(TextFormat("FPS: %i", GetFPS()), 10, SCREEN_H - 30, 2, 2, 20, WHITE, DARKGRAY);
-        EndDrawing();
-    }
+		for (int y = 0; y < GRID_H; y++) {
+			for (int x = 0; x < GRID_W; x++) {
+				Vector2i pos = { x, y };
+				ElementData& data = grid.Get(pos);
+				if (data.id != AIR)
+					ImageDrawPixel(&backBuffer, pos.x, pos.y, GetElement(data.id)->GetColor(grid, data, pos));
+			}
+		}
 
-    // Program Exit
-    //
-    CloseWindow();
-    return 0;
+		UpdateTexture(bufferTexture, backBuffer.data);
+
+		// Draw
+		//
+		BeginDrawing();
+		ClearBackground(BLACK);
+
+		DrawTexturePro(bufferTexture, Rectangle { 0, 0, GRID_W, GRID_H }, Rectangle { 0, 0, SCREEN_W, SCREEN_H }, Vector2 { 0, 0 }, 0, WHITE);
+
+		// Brush
+		DrawRectangleLines(((brush_x * SCALE) - (brush_size / 2) * SCALE) + 1, ((brush_y * SCALE) - (brush_size / 2) * SCALE) + 1, brush_size * SCALE, brush_size * SCALE, DARKGRAY);
+		DrawRectangleLines((brush_x * SCALE) - (brush_size / 2) * SCALE, (brush_y * SCALE) - (brush_size / 2) * SCALE, brush_size * SCALE, brush_size * SCALE, WHITE);
+
+		// Grid
+		if (show_grid) {
+			for (int x = 0; x < GRID_W; x++)
+				DrawLine(x * SCALE, 0, x * SCALE, SCREEN_H, Color { 255, 255, 255, 50 });
+
+			for (int y = 0; y < GRID_H; y++)
+				DrawLine(0, y * SCALE, SCREEN_W, y * SCALE, Color { 255, 255, 255, 50 });
+		}
+
+		// Overlay
+		DrawTextShadow(TextFormat("X: %i, Y: %i", mouse_x / SCALE, mouse_y / SCALE), 10, 10, 1, 1, 20, WHITE, DARKGRAY);
+		DrawTextShadow(TextFormat("BRUSH: %i", brush_size), 10, 30, 1, 1, 20, WHITE, DARKGRAY);
+		DrawTextShadow(TextFormat("ELEMENT: %s (%i)", element_name.c_str(), brush_element), 10, 50, 1, 1, 20, WHITE, DARKGRAY);
+
+		int fps = GetFPS();
+		DrawTextShadow(TextFormat("FPS: %i", fps), 10, SCREEN_H - 30, 1, 1, 20, WHITE, DARKGRAY);
+		EndDrawing();
+	}
+
+	// End Program
+	//
+	UnloadTexture(bufferTexture);
+	CloseWindow();
+	return 0;
 }
