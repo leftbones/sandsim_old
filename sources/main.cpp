@@ -1,5 +1,6 @@
 ﻿#include "main.h"
 #include "element.h"
+#include "menu.h"
 
 int tick_count = 0;
 int brush_size = 1;
@@ -56,16 +57,20 @@ int main() {
 	// Preferences
 	bool show_grid = false;
 
+	// Sizing
+	constexpr int grid_w = SCREEN_W / SCALE;
+	constexpr int grid_h = SCREEN_H / SCALE;
+
 	// Texture
-	Image backBuffer = GenImageColor(GRID_W, GRID_H, BLACK);
+	Image backBuffer = GenImageColor(grid_w, grid_h, BLACK);
 	Texture bufferTexture = LoadTextureFromImage(backBuffer);
 
 	// Elements
-	ElementGrid grid(GRID_W, GRID_H);
+	ElementGrid grid(grid_w, grid_h);
 	RegisterElements();
 
-	for (int x = 0; x < GRID_W; x++) {
-		for (int y = 0; y < GRID_H; y++) {
+	for (int x = 0; x < grid_w; x++) {
+		for (int y = 0; y < grid_h; y++) {
 			Vector2i pos = { x, y };
 			ElementData& data = grid.Get(pos);
 			GetElement(AIR)->Create(grid, data, pos);
@@ -88,15 +93,15 @@ int main() {
 		int mouse_wheel = (int)GetMouseWheelMove();
 
 		// Sand Spout
-		if (RandChance(0.75)) {
-			Vector2i pos = { (GRID_W / 2) + RandRange(-2, 2), 0 };
-			ElementData& data = grid.Get(pos);
-			GetElement(SAND)->Create(grid, data, pos);
-		}
+		// if (RandChance(0.75)) {
+		// 	Vector2i pos = { (grid_w / 2) + RandRange(-2, 2), 0 };
+		// 	ElementData& data = grid.Get(pos);
+		// 	GetElement(SAND)->Create(grid, data, pos);
+		// }
 
 		// Brush Painting
-		int brush_x = (mouse_x / SCALE);
-		int brush_y = (mouse_y / SCALE);
+		int brush_x = mouse_x / SCALE;
+		int brush_y = mouse_y / SCALE;
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 			int bx = brush_x - (brush_size / 2);
@@ -158,8 +163,8 @@ int main() {
 		bool is_even_tick = ((tick_count % 2) == 0);
 		int dir = is_even_tick ? 0 : 1;
 
-		for (int y = GRID_H - 1; y >= 0; y--) {
-			for (int x = dir ? 0 : GRID_W - 1; dir ? x < GRID_W : x > 0; dir ? x++ : x--) {
+		for (int y = grid_h - 1; y >= 0; y--) {
+			for (int x = dir ? 0 : grid_w - 1; dir ? x < grid_w : x > 0; dir ? x++ : x--) {
 				Vector2i pos = { x, y };
 				ElementData& data = grid.Get(pos);
 				if (data.id != AIR)
@@ -170,8 +175,8 @@ int main() {
 		// Texture
 		ImageClearBackground(&backBuffer, BLACK);
 
-		for (int y = 0; y < GRID_H; y++) {
-			for (int x = 0; x < GRID_W; x++) {
+		for (int y = 0; y < grid_h; y++) {
+			for (int x = 0; x < grid_w; x++) {
 				Vector2i pos = { x, y };
 				ElementData& data = grid.Get(pos);
 				if (data.id != AIR)
@@ -186,28 +191,33 @@ int main() {
 		BeginDrawing();
 		ClearBackground(BLACK);
 
-		DrawTexturePro(bufferTexture, Rectangle { 0, 0, GRID_W, GRID_H }, Rectangle { 0, 0, SCREEN_W, SCREEN_H }, Vector2 { 0, 0 }, 0, WHITE);
+		DrawTexturePro(bufferTexture, Rectangle { 0, 0, grid_w, grid_h }, Rectangle { 0, 0, SCREEN_W, SCREEN_H }, Vector2 { 0, 0 }, 0, WHITE);
+
+		// Grid
+		if (show_grid) {
+			for (int x = 0; x < grid_w; x++)
+				DrawLine(x * SCALE, 0, x * SCALE, SCREEN_H, Color { 255, 255, 255, 50 });
+
+			for (int y = 0; y < grid_h; y++)
+				DrawLine(0, y * SCALE, SCREEN_W, y * SCALE, Color { 255, 255, 255, 50 });
+		}
+
+		// Overlay
+		Color fps_color = GREEN;
+
+		if (GetFPS() < 100)
+			fps_color = YELLOW;
+
+		if (GetFPS() < 60)
+			fps_color = RED;
+
+		const char* fps_text = TextFormat("%i FPS", GetFPS());
+		DrawTextShadow(fps_text, SCREEN_W - MeasureText(fps_text, 20) - 6, 6, 1, 1, 20, fps_color, BLACK);
 
 		// Brush
 		DrawRectangleLines(((brush_x * SCALE) - (brush_size / 2) * SCALE) + 1, ((brush_y * SCALE) - (brush_size / 2) * SCALE) + 1, brush_size * SCALE, brush_size * SCALE, DARKGRAY);
 		DrawRectangleLines((brush_x * SCALE) - (brush_size / 2) * SCALE, (brush_y * SCALE) - (brush_size / 2) * SCALE, brush_size * SCALE, brush_size * SCALE, WHITE);
 
-		// Grid
-		if (show_grid) {
-			for (int x = 0; x < GRID_W; x++)
-				DrawLine(x * SCALE, 0, x * SCALE, SCREEN_H, Color { 255, 255, 255, 50 });
-
-			for (int y = 0; y < GRID_H; y++)
-				DrawLine(0, y * SCALE, SCREEN_W, y * SCALE, Color { 255, 255, 255, 50 });
-		}
-
-		// Overlay
-		DrawTextShadow(TextFormat("X: %i, Y: %i", mouse_x / SCALE, mouse_y / SCALE), 10, 10, 1, 1, 20, WHITE, DARKGRAY);
-		DrawTextShadow(TextFormat("BRUSH: %i", brush_size), 10, 30, 1, 1, 20, WHITE, DARKGRAY);
-		DrawTextShadow(TextFormat("ELEMENT: %s (%i)", element_name.c_str(), brush_element), 10, 50, 1, 1, 20, WHITE, DARKGRAY);
-
-		int fps = GetFPS();
-		DrawTextShadow(TextFormat("FPS: %i", fps), 10, SCREEN_H - 30, 1, 1, 20, WHITE, DARKGRAY);
 		EndDrawing();
 	}
 

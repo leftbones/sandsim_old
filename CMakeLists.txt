@@ -25,6 +25,8 @@ set(PROJECT_SOURCES
 "${CMAKE_CURRENT_SOURCE_DIR}/sources/main.h"
 "${CMAKE_CURRENT_SOURCE_DIR}/sources/element.cpp"
 "${CMAKE_CURRENT_SOURCE_DIR}/sources/element.h"
+"${CMAKE_CURRENT_SOURCE_DIR}/sources/menu.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/sources/menu.h"
 )
 
 add_executable (sandsim ${PROJECT_SOURCES})

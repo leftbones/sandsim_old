@@ -21,7 +21,7 @@
 // Brush Parameters
 //
 #define MIN_BRUSH 1
-#define MAX_BRUSH (50 * SCALE)
+#define MAX_BRUSH (200 / SCALE)
 
 extern int tick_count;
 extern std::string& element_name;
@@ -57,3 +57,6 @@ constexpr unsigned int SAND = 1;
 constexpr unsigned int WATER = 2;
 constexpr unsigned int WOOD = 3;
 constexpr unsigned int FIRE = 4;
+constexpr unsigned int SALT = 5;
+constexpr unsigned int CONCRETE_POWDER = 6;
+constexpr unsigned int CONCRETE = 7;

@@ -4,11 +4,11 @@
 // Element Grid
 //
 ElementData& ElementGrid::Get(const Vector2i& pos) {
-	return elements[(GRID_W * pos.y) + pos.x];
+	return elements[(size.x * pos.y) + pos.x];
 }
 
 ElementData& ElementGrid::Get(const Vector2i& pos, const Vector2i& offset) {
-    return elements[(GRID_W * (pos.y + offset.y)) + (pos.x + offset.x)];
+    return elements[(size.x * (pos.y + offset.y)) + (pos.x + offset.x)];
 }
 
 void ElementGrid::Set(const Vector2i& pos, unsigned int id) {
@@ -30,11 +30,11 @@ bool ElementGrid::IsEmpty(const Vector2i& pos, const Vector2i& offset) {
 }
 
 bool ElementGrid::InBounds(const Vector2i& pos) {
-    return pos.x >= 0 && pos.x < GRID_W && pos.y >= 0 && pos.y < GRID_H;
+    return pos.x >= 0 && pos.x < size.x && pos.y >= 0 && pos.y < size.y;
 }
 
 bool ElementGrid::InBounds(const Vector2i& pos, const Vector2i& offset) {
-    return pos.x + offset.x >= 0 && pos.x + offset.x < GRID_W && pos.y + offset.y >= 0 && pos.y + offset.y < GRID_H;
+    return pos.x + offset.x >= 0 && pos.x + offset.x < size.x && pos.y + offset.y >= 0 && pos.y + offset.y < size.y;
 }
 
 void ElementGrid::Swap(const Vector2i& pos, const Vector2i& offset) {
@@ -185,6 +185,33 @@ class Fire : public Gas {
 	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return RED; }
 };
 
+class Salt : public Powder {
+	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+		data.id = SALT;
+		name = "Salt";
+	}
+
+	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return WHITE; }
+};
+
+class Concrete_Powder : public Powder {
+	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+		data.id = CONCRETE_POWDER;
+		name = "Concrete Powder";
+	}
+
+	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return LIGHTGRAY; }
+};
+
+class Concrete : public Solid {
+	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+		data.id = CONCRETE;
+		name = "Concrete";
+	}
+
+	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return GRAY; }
+};
+
 
 // Element Registry
 //
@@ -198,4 +225,7 @@ void RegisterElements() {
 	Elements[2] = new Water();
 	Elements[3] = new Wood();
 	Elements[4] = new Fire();
+	Elements[5] = new Salt();
+	Elements[6] = new Concrete_Powder();
+	Elements[7] = new Concrete();
 }

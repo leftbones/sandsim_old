@@ -3,9 +3,6 @@
 #include "main.h"
 #include <vector>
 
-#define GRID_W (SCREEN_W / SCALE)
-#define GRID_H (SCREEN_H / SCALE)
-
 
 // Element Data
 //
@@ -20,9 +17,11 @@ struct ElementData {
 //
 class ElementGrid {
 	public:
+		Vector2i size;
 		std::vector<ElementData> elements;
 
 		ElementGrid(int w, int h) {
+			size = {w, h};
 			elements.resize(w * h);
 		}
 
