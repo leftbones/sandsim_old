@@ -8,7 +8,7 @@ ElementData& ElementGrid::Get(const Vector2i& pos) {
 }
 
 ElementData& ElementGrid::Get(const Vector2i& pos, const Vector2i& offset) {
-    return elements[(size.x * (pos.y + offset.y)) + (pos.x + offset.x)];
+	return elements[(size.x * (pos.y + offset.y)) + (pos.x + offset.x)];
 }
 
 void ElementGrid::Set(const Vector2i& pos, unsigned int id) {
@@ -37,6 +37,17 @@ bool ElementGrid::InBounds(const Vector2i& pos, const Vector2i& offset) {
     return pos.x + offset.x >= 0 && pos.x + offset.x < size.x && pos.y + offset.y >= 0 && pos.y + offset.y < size.y;
 }
 
+void ElementGrid::WakeNeighbors(const Vector2i& pos) {
+	if (InBounds(Vector2i{pos.x - 1, pos.y})) Get(Vector2i{pos.x - 1, pos.y}).settled = false;
+	if (InBounds(Vector2i{pos.x + 1, pos.y})) Get(Vector2i{pos.x + 1, pos.y}).settled = false;
+	if (InBounds(Vector2i{pos.x, pos.y - 1})) Get(Vector2i{pos.x, pos.y - 1}).settled = false;
+	if (InBounds(Vector2i{pos.x, pos.y + 1})) Get(Vector2i{pos.x, pos.y + 1}).settled = false;
+	if (InBounds(Vector2i{pos.x - 1, pos.y - 1})) Get(Vector2i{pos.x - 1, pos.y - 1}).settled = false;
+	if (InBounds(Vector2i{pos.x + 1, pos.y - 1})) Get(Vector2i{pos.x + 1, pos.y - 1}).settled = false;
+	if (InBounds(Vector2i{pos.x - 1, pos.y + 1})) Get(Vector2i{pos.x - 1, pos.y + 1}).settled = false;
+	if (InBounds(Vector2i{pos.x + 1, pos.y + 1})) Get(Vector2i{pos.x + 1, pos.y + 1}).settled = false;
+}
+
 void ElementGrid::Swap(const Vector2i& pos, const Vector2i& offset) {
     if (!InBounds(pos, offset))
         return;
@@ -51,11 +62,24 @@ void ElementGrid::Swap(const Vector2i& pos, const Vector2i& offset) {
 	int life1 = e1.life;
 	e1.life = e2.life;
 	e2.life = life1;
+
+	bool settled1 = e1.settled;
+	e1.settled = e2.settled;
+	e2.settled = settled1;
+
+	Color color1 = e1.color;
+	e1.color = e2.color;
+	e2.color = color1;	
 }
 
 bool ElementGrid::SwapIfEmpty(const Vector2i& pos, const Vector2i& offset) {
     if (!InBounds(pos, offset) || Get(pos, offset).id != AIR)
         return false;
+
+	Get(pos, offset).settled = false;
+
+	WakeNeighbors(pos);
+	WakeNeighbors(Vector2i{pos.x + offset.x, pos.y + offset.y});
 
     Swap(pos, offset);
     return true;
@@ -65,17 +89,45 @@ bool ElementGrid::SwapIfEmpty(const Vector2i& pos, const Vector2i& offset) {
 // Base Elements (Temp)
 //
 void Powder::Update(ElementGrid& grid, ElementData& data, Vector2i& pos) {
-	if (!grid.IsEmpty(pos, V_BELOW) && !grid.IsEmpty(pos, V_LEFT) && !grid.IsEmpty(pos, V_RIGHT) && !grid.IsEmpty(pos, V_BELOW_LEFT) && !grid.IsEmpty(pos, V_BELOW_RIGHT))
-	return;
+	if (grid.InBounds(pos, V_BELOW) && RandChance(0.5) && GetElement(grid.Get(pos, V_BELOW).id)->type == TypeLiquid) {
+		grid.Swap(pos, V_BELOW);
+		return;
+	}
 
-    if (grid.SwapIfEmpty(pos, V_BELOW))
-        return;
+	if (!grid.IsEmpty(pos, V_BELOW) && !grid.IsEmpty(pos, V_LEFT) && !grid.IsEmpty(pos, V_RIGHT) && !grid.IsEmpty(pos, V_BELOW_LEFT) && !grid.IsEmpty(pos, V_BELOW_RIGHT)) {
+		data.settled = true;
+		return;
+	}
 
-    if (grid.SwapIfEmpty(pos, V_BELOW_LEFT))
+    if (grid.SwapIfEmpty(pos, V_BELOW)) {
+		data.settled = false;
         return;
+	}
 
-    if (grid.SwapIfEmpty(pos, V_BELOW_RIGHT))
-        return;
+	if (RandChance(friction)) {
+		data.settled = true;
+		return;
+	}
+
+	if (!data.settled) {
+		int dir = 1;
+		if (RandChance(0.5))
+			dir = -1;
+
+		if (grid.SwapIfEmpty(pos, Vector2i{dir, 1}))
+			return;
+
+		if (grid.SwapIfEmpty(pos, Vector2i{-dir, 1}))
+			return;
+
+		if (RandChance(friction)) {
+			if (grid.SwapIfEmpty(pos, Vector2i{dir, 0}))
+				return;
+
+			if (grid.SwapIfEmpty(pos, Vector2i{-dir, 0}))
+				return;
+		}
+	}
 }
 
 void Solid::Update(ElementGrid& grid, ElementData& data, Vector2i& pos) {
@@ -137,79 +189,139 @@ void Gas::Update(ElementGrid& grid, ElementData& data, Vector2i& pos) {
 // Element Types (Temp)
 //
 class Air : public Gas {
-	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
-		data.id = AIR;
-		name = "Air";
-	}
+	public:
+		std::string name = "Air";
 
-	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return BLACK; }
+		void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+			data.id = AIR;
+			name = "Air";
+		}
+
+		Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return BLACK; }
 };
 
 class Sand : public Powder {
-	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
-		data.id = SAND;
-		name = "Sand";
-	}
+	public:
+		Sand() {
+			name = "Sand";
+			type = TypePowder;
+		}
 
-	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return YELLOW; }
+		void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+			data.id = SAND;
+			data.color = OffsetColor(YELLOW, -50, 50);
+			name = "Sand";
+		}
+
+		Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return YELLOW; }
 };
 
 class Water : public Liquid {
-	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
-		data.id = WATER;
-		name = "Water";
-	}
+	public:
+		Water() {
+			name = "Water";
+			type = TypeLiquid;
+		}
 
-	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return BLUE; }
+		void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+			data.id = WATER;
+			data.color = BLUE;
+			name = "Water";
+		}
+
+		Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return BLUE; }
 };
 
 class Wood : public Solid {
-	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
-		data.id = WOOD;
-		name = "Wood";
-	}
+	public:
+		Wood() {
+			name = "Wood";
+			type = TypeSolid;
+		}
 
-	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return BROWN; }
+		void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+			data.id = WOOD;
+			data.color = OffsetColor(DARKBROWN, -25, 25);
+		}
+
+		Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return BROWN; }
 };
 
 class Fire : public Gas {
 	public:
 		static constexpr int burn_time = 120;
 
-	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
-		data.id = FIRE;
-		data.life = burn_time;
-		name = "Fire";
-	}
+		Fire() {
+			name = "Fire";
+			type = TypeGas;
+		}
 
-	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return RED; }
+		void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+			data.id = FIRE;
+			data.life = burn_time;
+			data.color = OffsetColor(ORANGE, -50, 50);
+		}
+
+		Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return RED; }
 };
 
 class Salt : public Powder {
-	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
-		data.id = SALT;
-		name = "Salt";
-	}
+	public:
+		Salt() {
+			name = "Salt";
+			type = TypePowder;
+		}
+
+		void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+			data.id = SALT;
+			data.color = OffsetColor(WHITE, -50, 50);
+		}
 
 	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return WHITE; }
 };
 
 class Concrete_Powder : public Powder {
-	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
-		data.id = CONCRETE_POWDER;
-		name = "Concrete Powder";
-	}
+	public:
+		Concrete_Powder() {
+			name = "Concrete Powder";
+			type = TypePowder;
+		}
 
-	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return LIGHTGRAY; }
+		void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+			data.id = CONCRETE_POWDER;
+			data.color = OffsetColor(LIGHTGRAY, -50, 50);
+		}
+
+		Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return LIGHTGRAY; }
 };
 
 class Concrete : public Solid {
-	void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
-		data.id = CONCRETE;
-		name = "Concrete";
-	}
+	public:
+		Concrete() {
+			name = "Concrete";
+			type = TypeSolid;
+		}
 
-	Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return GRAY; }
+		void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+			data.id = CONCRETE;
+			data.color = OffsetColor(GRAY, -50, 50);
+		}
+
+		Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return GRAY; }
+};
+
+class Oil : public Liquid {
+	public:
+		Oil() {
+			name = "Oil";
+			type = TypeLiquid;
+		}
+
+		void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {
+			data.id = OIL;
+		}
+
+		Color GetColor(ElementGrid& grid, ElementData& data, Vector2i& pos) { return RED; }
 };
 
 
@@ -228,4 +340,5 @@ void RegisterElements() {
 	Elements[5] = new Salt();
 	Elements[6] = new Concrete_Powder();
 	Elements[7] = new Concrete();
+	Elements[8] = new Oil();
 }

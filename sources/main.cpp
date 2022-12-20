@@ -5,19 +5,20 @@
 int tick_count = 0;
 int brush_size = 1;
 int brush_element = 1;
-
-static std::string ElementNames[5] = {
-	"Air", "Sand", "Water", "Wood", "Fire"
-};
+float brush_density;
+std::string element_name;
 
 // Utility
 //
 bool RandRoll(int roll) {
+	if (roll == 1) return true;
 	if (roll == 0) return false;
 	return (1 + rand() % roll) == roll;
 }
 
 bool RandChance(float chance) {
+	if (chance == 1.0) return true;
+	if (chance == 0.0) return false;
 	float roll = ((float)rand()) / (float)RAND_MAX;
 	return ceil(roll * 100) / 100 <= chance;
 }
@@ -43,6 +44,14 @@ Color OffsetColor(Color color, int min, int max) {
 	new_color.g = ClampInt(new_color.g + offset, 15, 255);
 	new_color.b = ClampInt(new_color.b + offset, 15, 255);
 	return new_color;
+}
+
+void SetBrush(unsigned int id) {
+	element_name = GetElement(brush_element)->name;
+	brush_density = 0.05;
+
+	if (GetElement(brush_element)->type == TypeSolid)
+		brush_density = 1.0;
 }
 
 
@@ -77,8 +86,7 @@ int main() {
 		}
 	}
 
-	std::string element_name = ElementNames[brush_element];
-
+	SetBrush(brush_element);
 
 	// Main Loop
 	//
@@ -110,7 +118,7 @@ int main() {
 			for (int x = bx; x < bx + brush_size; x++) {
 				for (int y = by; y < by + brush_size; y++) {
 					Vector2i pos = { x, y };
-					if (RandChance(0.05) && grid.IsEmpty(pos)) {
+					if (RandChance(brush_density) && grid.IsEmpty(pos)) {
 						ElementData& data = grid.Get(pos);
 						GetElement(brush_element)->Create(grid, data, pos);
 					}
@@ -149,14 +157,14 @@ int main() {
 		}
 
 		// Next/Previous Brush Element
-		if (IsKeyPressed(KEY_W) && brush_element < FIRE) {
+		if (IsKeyPressed(KEY_W) && brush_element < 8) {
 			brush_element++;
-			element_name = ElementNames[brush_element];
+			SetBrush(brush_element);
 		}
 
 		if (IsKeyPressed(KEY_S) && brush_element > SAND) {
 			brush_element--;
-			element_name = ElementNames[brush_element];
+			SetBrush(brush_element);
 		}
 
 		// Element Grid
@@ -180,7 +188,8 @@ int main() {
 				Vector2i pos = { x, y };
 				ElementData& data = grid.Get(pos);
 				if (data.id != AIR)
-					ImageDrawPixel(&backBuffer, pos.x, pos.y, GetElement(data.id)->GetColor(grid, data, pos));
+					// ImageDrawPixel(&backBuffer, pos.x, pos.y, GetElement(data.id)->GetColor(grid, data, pos));
+					ImageDrawPixel(&backBuffer, pos.x, pos.y, data.color);
 			}
 		}
 
@@ -213,6 +222,8 @@ int main() {
 
 		const char* fps_text = TextFormat("%i FPS", GetFPS());
 		DrawTextShadow(fps_text, SCREEN_W - MeasureText(fps_text, 20) - 6, 6, 1, 1, 20, fps_color, BLACK);
+
+		DrawTextShadow(TextFormat("Element: %s", element_name.c_str()), 10, 10, 1, 1, 20, WHITE, DARKGRAY);
 
 		// Brush
 		DrawRectangleLines(((brush_x * SCALE) - (brush_size / 2) * SCALE) + 1, ((brush_y * SCALE) - (brush_size / 2) * SCALE) + 1, brush_size * SCALE, brush_size * SCALE, DARKGRAY);

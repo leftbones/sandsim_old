@@ -24,11 +24,11 @@
 #define MAX_BRUSH (200 / SCALE)
 
 extern int tick_count;
-extern std::string& element_name;
 
 bool RandRoll(int roll);
 bool RandChance(float chance);
 int RandRange(int min, int max);
+Color OffsetColor(Color color, int min, int max);
 
 
 // Vector2i
@@ -60,3 +60,4 @@ constexpr unsigned int FIRE = 4;
 constexpr unsigned int SALT = 5;
 constexpr unsigned int CONCRETE_POWDER = 6;
 constexpr unsigned int CONCRETE = 7;
+constexpr unsigned int OIL = 8;

@@ -9,9 +9,12 @@
 
 struct ElementData {
 	unsigned int id = AIR;
+	Color color = MAGENTA;
 	int life = 0;
+	bool settled = false;
 };
 
+enum ElementType { TypePowder, TypeSolid, TypeLiquid, TypeGas };
 
 // Element Grid
 //
@@ -31,11 +34,13 @@ class ElementGrid {
 		void Set(const Vector2i& pos, unsigned int id);
 		void Set(const Vector2i& pos, Vector2i& offset, unsigned int id);
 
+		bool IsEmpty(const Vector2i& pos);
+		bool IsEmpty(const Vector2i& pos, const Vector2i& offset);
+
 		bool InBounds(const Vector2i& pos);
 		bool InBounds(const Vector2i& pos, const Vector2i& offset);
 
-		bool IsEmpty(const Vector2i& pos);
-		bool IsEmpty(const Vector2i& pos, const Vector2i& offset);
+		void WakeNeighbors(const Vector2i& pos);
 
 		void Swap(const Vector2i& pos, const Vector2i& offset);
 		bool SwapIfEmpty(const Vector2i& pos, const Vector2i& offset);
@@ -47,6 +52,7 @@ class ElementGrid {
 class Element {
 	public:
 		std::string name;
+		ElementType type;
 
 		virtual ~Element() = default;
 		virtual void Create(ElementGrid& grid, ElementData& data, Vector2i& pos) {}
@@ -59,6 +65,8 @@ class Element {
 //
 class Powder : public Element {
 	public:
+		float friction = 0.05;
+
 		virtual ~Powder() = default;
 		void Update(ElementGrid& grid, ElementData& data, Vector2i& pos) override;
 };
@@ -84,6 +92,7 @@ class Gas : public Element {
 
 // Element Registry
 //
+
 static Element* Elements[4];
 void RegisterElements();
 
